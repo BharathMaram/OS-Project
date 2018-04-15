@@ -1,0 +1,95 @@
+#include <stdio.h>			
+#include <pthread.h>
+#include <semaphore.h>
+int chair_count = 0;
+int chair_I = 0;
+pthread_t S[5];
+pthread_t T;
+sem_t sleepT;
+sem_t St;
+sem_t C[3];
+pthread_mutex_t CT;
+void *Teacher()
+{
+while(1)
+{
+	sem_wait(&sleepT);
+	printf("Teacher is awakened by student.\n");
+	while(1)
+	{
+		pthread_mutex_lock(&CT);
+		if(chair_count == 0) 
+		{
+			pthread_mutex_unlock(&CT);
+			break;
+		}
+		sem_post(&C[chair_I]);
+		chair_count--;
+		printf("Student left the chair. Remaining Chairs %d\n", 3 - chair_count);
+		chair_I = (chair_I + 1) % 3;
+		pthread_mutex_unlock(&CT);
+           printf("\t Teacher is currently helping the student.\n");
+		sleep(5);
+		sem_post(&St);
+	}
+}
+}
+void *Student(void *threadID) 
+{
+int t;
+while(1)
+{
+	printf("Student %ld is doing work .\n", (long)threadID);
+	t = 7;
+	sleep(t);	
+	printf("Student %ld needs help from the Teacher\n", (long)threadID);
+	pthread_mutex_lock(&CT);
+	int count = chair_count;
+	pthread_mutex_unlock(&CT);
+	if(count < 3)
+	{
+		if(count == 0)
+			sem_post(&sleepT);
+		else
+			printf("Student %ld sat on a chair waiting for the teacher to finish. \n", (long)threadID);
+		pthread_mutex_lock(&CT);
+		int index = (chair_I + chair_count) % 3;
+		chair_count++;
+		pthread_mutex_unlock(&CT);
+		sem_wait(&C[index]);
+		printf("\t Student %ld is getting help from the teacher. \n", (long)threadID);
+		sem_wait(&St);
+		printf("Student %ld left Teacher room.\n",(long)threadID);
+	}
+	else 
+		printf("Student %ld will return at another time. \n", (long)threadID);
+}
+}
+int main(int argc, char* argv[])
+{
+int s_num;
+int id;
+sem_init(&sleepT, 0, 0);
+sem_init(&St, 0, 0);
+for(id = 0; id < 3; ++id)
+	sem_init(&C[id], 0, 0);
+pthread_mutex_init(&CT, NULL);
+if(argc<2)
+{
+	printf("Total students= .\n");
+	scanf(%d,&s_num);
+}
+else
+{
+	printf("Number of Students specified. Creating %d threads.\n", s_num);
+	s_num = atoi(argv[1]);
+}
+pthread_create(&T, NULL, Teacher, NULL);	
+for(id = 0; id < s_num; id++)
+pthread_create(&S[id], NULL, Student,(void*) (long)id);
+pthread_join(T, NULL);
+for(id = 0; id < s_num; id++)
+pthread_join(S[id], NULL);
+free(S); 
+return 0;
+}
